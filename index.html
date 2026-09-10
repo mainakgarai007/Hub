@@ -12,47 +12,20 @@
   <header class="site-header app-shell">
     <a class="brand" href="index.html" aria-label="MG Master Hub home">⚡ MG Master Hub</a>
     <div class="profile-area" id="profileArea">
-      <a class="profile-btn" href="login.html" id="profileButton" aria-label="Account">
-        <span class="avatar-fallback" id="avatarFallback">👤</span>
-        <img id="profileAvatar" class="profile-avatar" alt="Profile photo" hidden>
-        <span class="profile-name" id="profileName">Account</span>
-      </a>
-      <div class="profile-menu" id="profileMenu" hidden>
-        <div class="profile-menu-user">
-          <img id="menuAvatar" class="menu-avatar" alt="Profile photo" hidden>
-          <div><strong id="menuName">Guest</strong><small id="menuEmail">Not signed in</small></div>
-        </div>
-        <a href="login.html">Account</a>
-        <button id="menuLogout" type="button" hidden>Log out</button>
-      </div>
+      <a class="profile-btn" href="login.html" id="profileButton" aria-label="Account"><span class="avatar-fallback" id="avatarFallback">👤</span><img id="profileAvatar" class="profile-avatar" alt="Profile photo" hidden><span class="profile-name" id="profileName">Account</span></a>
+      <div class="profile-menu" id="profileMenu" hidden><div class="profile-menu-user"><img id="menuAvatar" class="menu-avatar" alt="Profile photo" hidden><div><strong id="menuName">Guest</strong><small id="menuEmail">Not signed in</small></div></div><a href="login.html">Account</a><button id="menuLogout" type="button" hidden>Log out</button></div>
     </div>
   </header>
-
   <main class="app-shell">
     <section class="hero hero-home">
       <div class="badge">⚡ MG MASTER HUB</div>
       <h1>Your world.<br><span>One Hub.</span></h1>
       <p>Anime, learning, music, games, photography and developer tools — built around you.</p>
-      <div class="actions">
-        <a class="btn primary" id="loginCta" href="login.html">Login / Sign up</a>
-        <a class="btn secondary" href="#modules">Explore</a>
-      </div>
+      <div class="actions"><a class="btn primary" id="loginCta" href="login.html">Login / Sign up</a><a class="btn secondary" href="#modules">Explore</a></div>
     </section>
-
-    <section id="modules" class="modules">
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow">DISCOVER</div>
-          <h2>Explore modules</h2>
-          <p class="section-subtitle">Choose a space and jump straight in.</p>
-        </div>
-      </div>
+    <section id="modules" class="modules"><div class="section-heading"><div><div class="eyebrow">DISCOVER</div><h2>Explore modules</h2><p class="section-subtitle">Choose a space and jump straight in.</p></div></div>
       <div class="grid module-grid">
-        <a class="card card-featured" href="anime.html">
-          <span class="card-icon">🎌</span>
-          <div><strong>Anime</strong><small>Releases, search & subscriptions</small></div>
-          <span class="card-arrow" aria-hidden="true">→</span>
-        </a>
+        <a class="card card-featured" href="anime.html"><span class="card-icon">🎌</span><div><strong>Anime</strong><small>Releases, search & subscriptions</small></div><span class="card-arrow" aria-hidden="true">→</span></a>
         <div class="card card-coming" aria-disabled="true"><span class="card-icon">🎮</span><div><strong>Games & Comics</strong><small>Discover, track and organize your favourites</small></div><span class="status-pill">Coming soon</span></div>
         <div class="card card-coming" aria-disabled="true"><span class="card-icon">🎵</span><div><strong>Music</strong><small>Music discovery and personal collections</small></div><span class="status-pill">Coming soon</span></div>
         <div class="card card-coming" aria-disabled="true"><span class="card-icon">📚</span><div><strong>Student & Learning</strong><small>Study tools, books, dictionaries and more</small></div><span class="status-pill">Coming soon</span></div>
@@ -60,7 +33,6 @@
         <a class="card card-featured" href="ai.html"><span class="card-icon">🤖</span><div><strong>AI Helper</strong><small>Ask, learn, code and build</small></div><span class="card-arrow" aria-hidden="true">→</span></a>
       </div>
     </section>
-
     <section class="footer-note" aria-label="Project status"><span>MG Master Hub</span><span>Built to grow.</span></section>
   </main>
   <script type="module" src="app.js?v=15"></script>
