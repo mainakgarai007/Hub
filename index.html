@@ -7,7 +7,26 @@
   <meta name="description" content="MG Master Hub — your personal entertainment, student and developer hub.">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-page="hub">
+  <header class="site-header app-shell">
+    <a class="brand" href="index.html">⚡ MG Master Hub</a>
+    <div class="profile-area" id="profileArea">
+      <a class="profile-btn" href="login.html" id="profileButton" aria-label="Open profile">
+        <span class="avatar-fallback" id="avatarFallback">👤</span>
+        <img id="profileAvatar" class="profile-avatar" alt="Profile photo" hidden>
+        <span class="profile-name" id="profileName">Login</span>
+      </a>
+      <div class="profile-menu" id="profileMenu" hidden>
+        <div class="profile-menu-user">
+          <img id="menuAvatar" class="menu-avatar" alt="Profile photo" hidden>
+          <div><strong id="menuName">Guest</strong><small id="menuEmail">Not signed in</small></div>
+        </div>
+        <a href="login.html" id="menuAccount">Account</a>
+        <button type="button" id="menuLogout" hidden>Log out</button>
+      </div>
+    </div>
+  </header>
+
   <main class="app-shell">
     <section class="hero">
       <div class="badge">⚡ MG MASTER HUB</div>
@@ -31,5 +50,7 @@
       </div>
     </section>
   </main>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
