@@ -1,11 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Login — MG Master Hub</title><link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — MG Master Hub</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-wrap{max-width:520px;margin:auto}
+    .auth-card{padding:28px;border:1px solid #202b40;border-radius:22px;background:linear-gradient(145deg,#0d1422,#0a101c);box-shadow:0 20px 50px rgba(0,0,0,.25)}
+    .auth-tabs{display:flex;gap:8px;margin-bottom:22px}
+    .auth-tab{flex:1;padding:12px;border:1px solid #29344b;border-radius:12px;background:#0a101c;color:#cfd7e8;font-weight:750;cursor:pointer}
+    .auth-tab.active{background:#fff;color:#080b12}
+    .auth-field{display:flex;flex-direction:column;gap:8px;margin-bottom:15px}
+    .auth-field label{font-size:13px;color:#aab4c8;font-weight:700}
+    .auth-field input{width:100%;padding:13px 14px;border:1px solid #29344b;border-radius:12px;background:#070b14;color:#f5f7ff;outline:none}
+    .auth-field input:focus{border-color:#657da9}
+    .auth-submit{width:100%;padding:13px 18px;border:0;border-radius:12px;background:#fff;color:#080b12;font-weight:800;cursor:pointer}
+    .auth-message{min-height:22px;margin:14px 0 0;color:#aab4c8;font-size:14px;line-height:1.45}
+    .auth-message.error{color:#ff9f9f}.auth-message.success{color:#9ff0b0}
+    .account-panel{display:none}
+    .account-panel h2{font-size:24px;margin-bottom:8px}.account-panel p{color:#aab4c8;margin-bottom:20px}
+    .logout-btn{display:inline-block;padding:12px 17px;border:1px solid #29344b;border-radius:12px;background:#0d1422;color:#e9edfa;font-weight:750;cursor:pointer}
+    .home-actions{margin-top:18px}
+  </style>
 </head>
-<body><main class="app-shell"><section class="hero" style="min-height:100vh">
-  <div class="badge">🔐 ACCOUNT</div><h1>Login<br><span>coming next.</span></h1>
-  <p>The Firebase Authentication layer will be connected here next. Your account, anime subscriptions and preferences will live securely in Firebase.</p>
-  <div class="actions"><a class="btn primary" href="index.html">← Back to Hub</a><a class="btn secondary" href="anime.html">Open Anime</a></div>
-</section></main></body></html>
+<body>
+  <main class="app-shell">
+    <section class="hero" style="min-height:100vh">
+      <div class="auth-wrap">
+        <div class="badge">🔐 ACCOUNT</div>
+        <h1>MG Master <span>Hub</span></h1>
+        <p>Sign in to keep your account, anime subscriptions and preferences synced with Firebase.</p>
+
+        <div class="auth-card" id="authCard">
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="loginTab" type="button">Login</button>
+            <button class="auth-tab" id="signupTab" type="button">Sign up</button>
+          </div>
+
+          <form id="authForm">
+            <div class="auth-field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+            </div>
+            <div class="auth-field">
+              <label for="password">Password</label>
+              <input id="password" name="password" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters">
+            </div>
+            <button class="auth-submit" id="authSubmit" type="submit">Login</button>
+          </form>
+          <div class="auth-message" id="authMessage" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="auth-card account-panel" id="accountPanel">
+          <div class="badge">✅ SIGNED IN</div>
+          <h2>Welcome back!</h2>
+          <p id="accountEmail"></p>
+          <button class="logout-btn" id="logoutBtn" type="button">Log out</button>
+        </div>
+
+        <div class="actions home-actions">
+          <a class="btn secondary" href="index.html">← Back to Hub</a>
+          <a class="btn secondary" href="anime.html">Open Anime</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBF3jubXpba2G8CPszVN-Dip3-OWs_EUoE",
+      authDomain: "hubs-b9c39.firebaseapp.com",
+      projectId: "hubs-b9c39",
+      storageBucket: "hubs-b9c39.firebasestorage.app",
+      messagingSenderId: "699995857695",
+      appId: "1:699995857695:web:240f8598fb4100d7cf462a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const loginTab = document.getElementById('loginTab');
+    const signupTab = document.getElementById('signupTab');
+    const authForm = document.getElementById('authForm');
+    const authSubmit = document.getElementById('authSubmit');
+    const authMessage = document.getElementById('authMessage');
+    const authCard = document.getElementById('authCard');
+    const accountPanel = document.getElementById('accountPanel');
+    const accountEmail = document.getElementById('accountEmail');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    let mode = 'login';
+
+    function setMessage(text, type = '') {
+      authMessage.textContent = text;
+      authMessage.className = `auth-message ${type}`.trim();
+    }
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      const isLogin = mode === 'login';
+      loginTab.classList.toggle('active', isLogin);
+      signupTab.classList.toggle('active', !isLogin);
+      authSubmit.textContent = isLogin ? 'Login' : 'Create account';
+      document.getElementById('password').autocomplete = isLogin ? 'current-password' : 'new-password';
+      setMessage('');
+    }
+
+    loginTab.addEventListener('click', () => setMode('login'));
+    signupTab.addEventListener('click', () => setMode('signup'));
+
+    authForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setMessage('Working…');
+      authSubmit.disabled = true;
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        if (mode === 'signup') {
+          await createUserWithEmailAndPassword(auth, email, password);
+          setMessage('Account created successfully!', 'success');
+        } else {
+          await signInWithEmailAndPassword(auth, email, password);
+          setMessage('Login successful!', 'success');
+        }
+      } catch (error) {
+        const messages = {
+          'auth/email-already-in-use': 'This email already has an account. Try Login.',
+          'auth/invalid-email': 'Please enter a valid email address.',
+          'auth/weak-password': 'Password should be at least 6 characters.',
+          'auth/invalid-credential': 'Email or password is incorrect.',
+          'auth/user-not-found': 'No account found for this email.',
+          'auth/wrong-password': 'Email or password is incorrect.'
+        };
+        setMessage(messages[error.code] || `Authentication failed: ${error.message}`, 'error');
+      } finally {
+        authSubmit.disabled = false;
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        setMode('login');
+        setMessage('Logged out successfully.', 'success');
+      } catch (error) {
+        setMessage(error.message, 'error');
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        authCard.style.display = 'none';
+        accountPanel.style.display = 'block';
+        accountEmail.textContent = user.email || 'Signed-in account';
+      } else {
+        authCard.style.display = 'block';
+        accountPanel.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
