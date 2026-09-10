@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="description" content="Sign in or create an MG Master Hub account.">
 <title>Login — MG Master Hub</title>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 <main class="app-shell">
@@ -14,210 +14,51 @@
 <div class="badge">🔐 ACCOUNT</div>
 <h1>MG Master <span>Hub</span></h1>
 <p>Sign in to manage your account and sync anime preferences.</p>
-
 <div class="auth-card" id="authCard">
 <div class="auth-tabs">
 <button class="auth-tab active" id="loginTab" type="button">Login</button>
 <button class="auth-tab" id="signupTab" type="button">Sign up</button>
 </div>
-
 <form id="authForm" onsubmit="return false;" novalidate>
-<div class="auth-field">
-<label for="email">Email</label>
-<input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
-</div>
-<div class="auth-field">
-<label for="password">Password</label>
-<input id="password" type="password" minlength="6" autocomplete="current-password" required placeholder="At least 6 characters">
-</div>
+<div class="auth-field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required placeholder="you@example.com"></div>
+<div class="auth-field"><label for="password">Password</label><input id="password" type="password" minlength="6" autocomplete="current-password" required placeholder="At least 6 characters"></div>
 <button class="auth-submit" id="authSubmit" type="submit">Login</button>
 </form>
-
 <div class="divider"><span>or</span></div>
 <button class="google-btn" id="googleBtn" type="button">🌐 Continue with Google</button>
 <div class="auth-message" id="authMessage" role="status" aria-live="polite"></div>
 </div>
-
 <div class="auth-card account-panel" id="accountPanel">
 <div class="profile-large"><img id="accountAvatar" alt="Profile photo" hidden><span id="accountFallback">👤</span></div>
-<h2 id="accountName">Welcome!</h2>
-<p id="accountEmail"></p>
+<h2 id="accountName">Welcome!</h2><p id="accountEmail"></p>
 <button class="logout-btn" id="logoutBtn" type="button">Log out</button>
 </div>
-
-<div class="actions home-actions">
-<a class="btn secondary" href="index.html">← Back to Hub</a>
-<a class="btn secondary" href="anime.html">Open Anime</a>
-</div>
+<div class="actions home-actions"><a class="btn secondary" href="index.html">← Back to Hub</a><a class="btn secondary" href="anime.html">Open Anime</a></div>
 </div>
 </section>
 </main>
-
-<!-- Keep authentication independent from app.js so a broken anime/API module cannot break Login/Sign up. -->
 <script type="module">
 const FIREBASE_VERSION='12.18.0';
 const FIREBASE_CONFIG={
-  apiKey:'AIzaSyBF3jubXpba2GCPszVN-Dip3-OWs_EUoE',
-  authDomain:'hubs-b9c39.firebaseapp.com',
-  projectId:'hubs-b9c39',
-  storageBucket:'hubs-b9c39.firebasestorage.app',
-  messagingSenderId:'699995857695',
-  appId:'1:699995857695:web:240f8598fb4100d7cf462a'
+ apiKey:'AIzaSyBF3jubXpba2G8CPszVN-Dip3-OWs_EUoE',
+ authDomain:'hubs-b9c39.firebaseapp.com',
+ projectId:'hubs-b9c39',
+ storageBucket:'hubs-b9c39.firebasestorage.app',
+ messagingSenderId:'699995857695',
+ appId:'1:699995857695:web:240f8598fb4100d7cf462a'
 };
-
-const loginTab=document.getElementById('loginTab');
-const signupTab=document.getElementById('signupTab');
-const form=document.getElementById('authForm');
-const submit=document.getElementById('authSubmit');
-const google=document.getElementById('googleBtn');
-const msg=document.getElementById('authMessage');
-const card=document.getElementById('authCard');
-const panel=document.getElementById('accountPanel');
-const emailEl=document.getElementById('accountEmail');
-const nameEl=document.getElementById('accountName');
-const avatar=document.getElementById('accountAvatar');
-const fallback=document.getElementById('accountFallback');
-const logout=document.getElementById('logoutBtn');
+const loginTab=document.getElementById('loginTab'),signupTab=document.getElementById('signupTab'),form=document.getElementById('authForm'),submit=document.getElementById('authSubmit'),google=document.getElementById('googleBtn'),msg=document.getElementById('authMessage'),card=document.getElementById('authCard'),panel=document.getElementById('accountPanel'),emailEl=document.getElementById('accountEmail'),nameEl=document.getElementById('accountName'),avatar=document.getElementById('accountAvatar'),fallback=document.getElementById('accountFallback'),logout=document.getElementById('logoutBtn');
 let mode='login';
-let authApi=null;
-
-function message(text,cls=''){
-  msg.textContent=text;
-  msg.className=`auth-message ${cls}`;
-}
-
-function setMode(next){
-  mode=next;
-  loginTab.classList.toggle('active',mode==='login');
-  signupTab.classList.toggle('active',mode==='signup');
-  submit.textContent=mode==='login'?'Login':'Create account';
-  form.reset();
-  message('');
-}
-loginTab.addEventListener('click',()=>setMode('login'));
-signupTab.addEventListener('click',()=>setMode('signup'));
-
-function friendly(error){
-  const code=error?.code||'';
-  const map={
-    'auth/email-already-in-use':'This email already has an account. Switch to Login.',
-    'auth/invalid-email':'Please enter a valid email address.',
-    'auth/weak-password':'Password should be at least 6 characters.',
-    'auth/invalid-credential':'Email or password is incorrect.',
-    'auth/user-disabled':'This account has been disabled in Firebase.',
-    'auth/unauthorized-domain':'Firebase does not allow this website yet. Add mainakgarai007.github.io under Authentication → Settings → Authorized domains.',
-    'auth/popup-blocked':'Google popup was blocked by the browser. Allow popups for this site and try Google again.',
-    'auth/popup-closed-by-user':'Google sign-in was cancelled.',
-    'auth/cancelled-popup-request':'Another Google sign-in is already running.',
-    'auth/operation-not-allowed':'This sign-in method is disabled in Firebase Authentication.',
-    'auth/account-exists-with-different-credential':'This Google email already uses another sign-in method. Log in with that method first.',
-    'auth/network-request-failed':'Network error. Check your internet connection.',
-    'auth/invalid-api-key':'Firebase API key is invalid or restricted incorrectly.',
-    'auth/invalid-continue-uri':'Firebase rejected the sign-in redirect URL. Check Authorized domains.',
-    'auth/internal-error':'Firebase returned an internal error. Check Authentication settings.',
-    'auth/too-many-requests':'Too many attempts. Wait a little and try again.'
-  };
-  return map[code]||error?.message||'Authentication failed. Please try again.';
-}
-
-function showUser(user){
-  if(!user){
-    card.style.display='block';
-    panel.style.display='none';
-    return;
-  }
-  card.style.display='none';
-  panel.style.display='block';
-  nameEl.textContent=user.displayName||user.email?.split('@')[0]||'Welcome!';
-  emailEl.textContent=user.email||'';
-  if(user.photoURL){
-    avatar.src=user.photoURL;
-    avatar.hidden=false;
-    fallback.hidden=true;
-  }else{
-    avatar.hidden=true;
-    fallback.hidden=false;
-  }
-}
-
-async function boot(){
-  try{
-    const [{initializeApp},{getApps}]=await Promise.all([
-      import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`),
-      import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`)
-    ]);
-    const authModule=await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`);
-    const app=getApps().length?getApps()[0]:initializeApp(FIREBASE_CONFIG);
-    const auth=authModule.getAuth(app);
-    await authModule.setPersistence(auth,authModule.browserLocalPersistence);
-    authApi={...authModule,auth};
-
-    authModule.onAuthStateChanged(auth,showUser);
-    showUser(auth.currentUser);
-
-    form.addEventListener('submit',async event=>{
-      event.preventDefault();
-      const email=document.getElementById('email').value.trim();
-      const password=document.getElementById('password').value;
-      if(!email||!password){message('Enter your email and password.','error');return;}
-      if(password.length<6){message('Password must be at least 6 characters.','error');return;}
-      submit.disabled=true;
-      message(mode==='login'?'Signing in…':'Creating your account…');
-      try{
-        if(mode==='signup'){
-          await authModule.createUserWithEmailAndPassword(auth,email,password);
-          message('Account created successfully!','success');
-        }else{
-          await authModule.signInWithEmailAndPassword(auth,email,password);
-          message('Login successful!','success');
-        }
-      }catch(error){
-        console.error('Email authentication error:',error);
-        message(friendly(error),'error');
-      }finally{
-        submit.disabled=false;
-      }
-    });
-
-    google.addEventListener('click',async()=>{
-      google.disabled=true;
-      message('Opening Google sign-in…');
-      try{
-        const provider=new authModule.GoogleAuthProvider();
-        provider.setCustomParameters({prompt:'select_account'});
-        await authModule.signInWithPopup(auth,provider);
-        message('Google login successful!','success');
-      }catch(error){
-        console.error('Google authentication error:',error);
-        if(error?.code==='auth/popup-blocked'){
-          message('Popup blocked. Allow popups for this site, then tap Google again.','error');
-        }else if(error?.code==='auth/unauthorized-domain'){
-          message(friendly(error),'error');
-        }else{
-          message(friendly(error),'error');
-        }
-      }finally{
-        google.disabled=false;
-      }
-    });
-
-    logout.addEventListener('click',async()=>{
-      logout.disabled=true;
-      try{
-        await authModule.signOut(auth);
-        message('Logged out.','success');
-      }catch(error){
-        console.error('Logout error:',error);
-        message('Could not log out. Please try again.','error');
-      }finally{
-        logout.disabled=false;
-      }
-    });
-  }catch(error){
-    console.error('Firebase boot error:',error);
-    message('Firebase could not load. Refresh the page and try again.','error');
-  }
-}
+function message(text,cls=''){msg.textContent=text;msg.className=`auth-message ${cls}`}
+function setMode(next){mode=next;loginTab.classList.toggle('active',mode==='login');signupTab.classList.toggle('active',mode==='signup');submit.textContent=mode==='login'?'Login':'Create account';form.reset();message('')}
+loginTab.addEventListener('click',()=>setMode('login'));signupTab.addEventListener('click',()=>setMode('signup'));
+function friendly(error){const code=error?.code||'';const map={'auth/email-already-in-use':'This email already has an account. Switch to Login.','auth/invalid-email':'Please enter a valid email address.','auth/weak-password':'Password should be at least 6 characters.','auth/invalid-credential':'Email or password is incorrect.','auth/user-disabled':'This account has been disabled in Firebase.','auth/unauthorized-domain':'Firebase does not allow this website yet. Add mainakgarai007.github.io under Authentication → Settings → Authorized domains.','auth/popup-blocked':'Google popup was blocked by the browser. Allow popups for this site and try Google again.','auth/popup-closed-by-user':'Google sign-in was cancelled.','auth/cancelled-popup-request':'Another Google sign-in is already running.','auth/operation-not-allowed':'This sign-in method is disabled in Firebase Authentication.','auth/account-exists-with-different-credential':'This Google email already uses another sign-in method. Log in with that method first.','auth/network-request-failed':'Network error. Check your internet connection.','auth/invalid-api-key':'Firebase API key is invalid or restricted incorrectly.','auth/invalid-continue-uri':'Firebase rejected the sign-in redirect URL. Check Authorized domains.','auth/internal-error':'Firebase returned an internal error. Check Authentication settings.','auth/too-many-requests':'Too many attempts. Wait a little and try again.'};return map[code]||error?.message||'Authentication failed. Please try again.'}
+function showUser(user){if(!user){card.style.display='block';panel.style.display='none';return}card.style.display='none';panel.style.display='block';nameEl.textContent=user.displayName||user.email?.split('@')[0]||'Welcome!';emailEl.textContent=user.email||'';if(user.photoURL){avatar.src=user.photoURL;avatar.hidden=false;fallback.hidden=true}else{avatar.hidden=true;fallback.hidden=false}}
+async function boot(){try{const appModule=await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);const authModule=await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`);const app=appModule.getApps().length?appModule.getApps()[0]:appModule.initializeApp(FIREBASE_CONFIG);const auth=authModule.getAuth(app);await authModule.setPersistence(auth,authModule.browserLocalPersistence);authModule.onAuthStateChanged(auth,showUser);showUser(auth.currentUser);
+form.addEventListener('submit',async event=>{event.preventDefault();const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;if(!email||!password){message('Enter your email and password.','error');return}if(password.length<6){message('Password must be at least 6 characters.','error');return}submit.disabled=true;message(mode==='login'?'Signing in…':'Creating your account…');try{if(mode==='signup'){await authModule.createUserWithEmailAndPassword(auth,email,password);message('Account created successfully!','success')}else{await authModule.signInWithEmailAndPassword(auth,email,password);message('Login successful!','success')}}catch(error){console.error(error);message(friendly(error),'error')}finally{submit.disabled=false}});
+google.addEventListener('click',async()=>{google.disabled=true;message('Opening Google sign-in…');try{const provider=new authModule.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await authModule.signInWithPopup(auth,provider);message('Google login successful!','success')}catch(error){console.error(error);message(friendly(error),'error')}finally{google.disabled=false}});
+logout.addEventListener('click',async()=>{logout.disabled=true;try{await authModule.signOut(auth);message('Logged out.','success')}catch(error){console.error(error);message('Could not log out. Please try again.','error')}finally{logout.disabled=false}});
+}catch(error){console.error('Firebase boot error:',error);message('Firebase could not load. Refresh the page and try again.','error')}}
 boot();
 </script>
 </body>
