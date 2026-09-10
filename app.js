@@ -43,7 +43,7 @@ function normalizeKitsu(item){
   return{mal_id:null,anime_id:`kitsu:${item?.id||'unknown'}`,kitsu_id:item?.id||null,title:t.en||t.en_jp||t.ja_jp||t.en_us||'Unknown title',title_english:t.en||null,year:start?Number(start.slice(0,4)):'—',score:a.averageRating?Number((Number(a.averageRating)/10).toFixed(2)):null,type:a.subtype||'Anime',status:a.status==='current'?'Currently Airing':(a.status||'Unknown'),images:{jpg:{large_image_url:poster,image_url:poster}},aired:{from:start},nextEpisodeAt:null,_source:'kitsu'};
 }
 function normalizeAniList(item){
-  const title=item?.title||{},start=item?.startDate, date=start?.year?`${start.year}-${String(start.month||1).padStart(2,'0')}-${String(start.day||1).padStart(2,'0')}`:null,malId=item?.idMal||null;
+  const title=item?.title||{},start=item?.startDate,date=start?.year?`${start.year}-${String(start.month||1).padStart(2,'0')}-${String(start.day||1).padStart(2,'0')}`:null,malId=item?.idMal||null;
   return{mal_id:malId,anime_id:malId?`mal:${malId}`:`anilist:${item?.id||'unknown'}`,anilist_id:item?.id||null,title:title.english||title.romaji||title.native||'Unknown title',title_english:title.english||null,year:start?.year||'—',score:item.averageScore?Number((item.averageScore/10).toFixed(2)):null,type:item.format||'Anime',status:item.status==='RELEASING'?'Currently Airing':item.status==='FINISHED'?'Finished Airing':(item.status||'Unknown'),images:{jpg:{large_image_url:item.coverImage?.extraLarge||item.coverImage?.large||item.coverImage?.medium||'',image_url:item.coverImage?.large||item.coverImage?.medium||''}},aired:{from:date},nextEpisodeAt:item.nextAiringEpisode?.airingAt?item.nextAiringEpisode.airingAt*1000:null,nextEpisode:item.nextAiringEpisode?.episode||null,_source:'anilist'};
 }
 async function requestAniList(mode,value=''){
@@ -84,7 +84,7 @@ const fetchJikan=requestJikan;
 function getAnimeId(a){return a?.anime_id||((a?.mal_id!=null)?`mal:${a.mal_id}`:`unknown:${String(a?.title||'').toLowerCase()}`)}
 function escapeHtml(v){return String(v??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]))}
 function animeCard(a,extra=''){
-  const item=a&&typeof a==='object'?a{},image=item.images?.jpg?.large_image_url||item.images?.jpg?.image_url||'',title=item.title_english||item.title||'Unknown title',year=item.year||item.aired?.from?.slice?.(0,4)||'—',score=Number.isFinite(Number(item.score))?String(item.score):'—';
+  const item=a&&typeof a==='object'?a:{},image=item.images?.jpg?.large_image_url||item.images?.jpg?.image_url||'',title=item.title_english||item.title||'Unknown title',year=item.year||item.aired?.from?.slice?.(0,4)||'—',score=Number.isFinite(Number(item.score))?String(item.score):'—';
   return `<article class="anime-card"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.style.display='none'"><div class="anime-card-copy"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(year)} · ⭐ ${escapeHtml(score)}</p><p>${escapeHtml(item.type||'Anime')} · ${escapeHtml(item.status||'Unknown')}</p>${typeof extra==='string'?extra:''}</div></article>`;
 }
 let firebasePromise;
