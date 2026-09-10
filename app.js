@@ -11,7 +11,7 @@ const FIREBASE_CONFIG = {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const cache = new Map();
-const CACHE_MS = 45000;
+const CACHE_MS = 60000;
 
 function normalizeKitsu(item) {
   const a = item?.attributes || {};
@@ -65,8 +65,9 @@ async function requestJikan(path) {
 async function requestKitsu(path) {
   const q = new URLSearchParams(path.split('?')[1] || '');
   let url = `${KITSU_BASE}/anime?page[limit]=12`;
-  if (q.get('q')) {
-    url += `&filter[text]=${encodeURIComponent(q.get('q'))}`;
+  const query = q.get('q');
+  if (query) {
+    url += `&filter[text]=${encodeURIComponent(query)}`;
   } else if (path.includes('/top/anime')) {
     url += '&sort=-userCount';
   } else {
@@ -212,5 +213,9 @@ function setProfileUI(firebase){
     if (typeof unsubscribe === 'function') unsubscribe();
   };
 }
+
 window.MGHub={searchAnime,fetchJikan,animeCard,escapeHtml,initFirebase};
 window.MGHubReady=initFirebase().then(f=>{window.MGHubFirebase=f;setProfileUI(f);return f}).catch(e=>{console.error(e);setProfileUI(null);return null});
+
+// ES-module exports used by the Hub pages.
+export { searchAnime, fetchJikan, animeCard, escapeHtml, initFirebase };
