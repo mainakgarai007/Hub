@@ -84,7 +84,18 @@ const searchAnime = q => {
 const fetchJikan = requestJikan;
 
 function escapeHtml(v){return String(v??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]))}
-function animeCard(a,extra=''){const image=a.images?.jpg?.large_image_url||a.images?.jpg?.image_url||'';const title=a.title_english||a.title||'Unknown title';const year=a.year||a.aired?.from?.slice(0,4)||'—';return `<article class="anime-card"><img src="${escapeHtml(image)}" alt="" loading="lazy"><div class="anime-card-copy"><h3>${escapeHtml(title)}</h3><p>${year} · ⭐ ${a.score??'—'}</p><p>${escapeHtml(a.type||'Anime')} · ${escapeHtml(a.status||'Unknown')}</p>${extra}</div></article>`}
+function animeCard(a,extra=''){
+  const item = (a && typeof a === 'object') ? a : {};
+  const image = item.images?.jpg?.large_image_url || item.images?.jpg?.image_url || '';
+  const title = item.title_english || item.title || 'Unknown title';
+  const rawYear = item.year || item.aired?.from?.slice?.(0, 4);
+  const year = rawYear ? String(rawYear) : '—';
+  const score = Number.isFinite(Number(item.score)) ? String(item.score) : '—';
+  const type = item.type || 'Anime';
+  const status = item.status || 'Unknown';
+  const safeExtra = typeof extra === 'string' ? extra : '';
+  return `<article class="anime-card"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy"><div class="anime-card-copy"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(year)} · ⭐ ${escapeHtml(score)}</p><p>${escapeHtml(type)} · ${escapeHtml(status)}</p>${safeExtra}</div></article>`;
+}
 
 let firebasePromise;
 async function initFirebase(){
@@ -97,6 +108,109 @@ async function initFirebase(){
   })();
   return firebasePromise;
 }
-function setProfileUI(firebase){const button=document.getElementById('profileButton'),avatar=document.getElementById('profileAvatar'),fallback=document.getElementById('avatarFallback'),name=document.getElementById('profileName'),menu=document.getElementById('profileMenu'),menuAvatar=document.getElementById('menuAvatar'),menuName=document.getElementById('menuName'),menuEmail=document.getElementById('menuEmail'),logout=document.getElementById('menuLogout'),loginCta=document.getElementById('loginCta');if(!button)return;const guest=()=>{button.href='login.html';name.textContent='Login';fallback.hidden=false;avatar.hidden=true;menuName.textContent='Guest';menuEmail.textContent='Not signed in';menuAvatar.hidden=true;logout.hidden=true;if(loginCta)loginCta.hidden=false};const userUI=u=>{button.href='#';name.textContent=u.displayName||u.email?.split('@')[0]||'Account';menuName.textContent=u.displayName||'My account';menuEmail.textContent=u.email||'';logout.hidden=false;if(u.photoURL){avatar.src=u.photoURL;avatar.hidden=false;fallback.hidden=true;menuAvatar.src=u.photoURL;menuAvatar.hidden=false}else{avatar.hidden=true;fallback.hidden=false;menuAvatar.hidden=true}if(loginCta)loginCta.hidden=true};button.addEventListener('click',e=>{if(firebase?.auth.currentUser){e.preventDefault();menu.hidden=!menu.hidden}});document.addEventListener('click',e=>{if(menu&&!menu.hidden&&!e.target.closest('#profileArea'))menu.hidden=true});logout?.addEventListener('click',async()=>{await firebase.signOut(firebase.auth);menu.hidden=true});if(!firebase)return guest();firebase.onAuthStateChanged(firebase.auth,u=>u?userUI(u):guest())}
+function setProfileUI(firebase){
+  try { setProfileUI._cleanup?.(); } catch (e) { console.error('Profile UI cleanup failed:', e); }
+
+  const button = document.getElementById('profileButton');
+  const avatar = document.getElementById('profileAvatar');
+  const fallback = document.getElementById('avatarFallback');
+  const name = document.getElementById('profileName') || document.getElementById('displayName');
+  const menu = document.getElementById('profileMenu');
+  const menuAvatar = document.getElementById('menuAvatar');
+  const menuName = document.getElementById('menuName');
+  const menuEmail = document.getElementById('menuEmail');
+  const logout = document.getElementById('menuLogout');
+  const loginCta = document.getElementById('loginCta');
+  const profileArea = document.getElementById('profileArea');
+
+  if (!button) return;
+
+  const setText = (el, value) => { if (el) el.textContent = value; };
+  const showGuest = () => {
+    button.href = 'login.html';
+    setText(name, 'Login');
+    if (avatar) { avatar.hidden = true; avatar.removeAttribute('src'); }
+    if (fallback) fallback.hidden = false;
+    if (menuAvatar) { menuAvatar.hidden = true; menuAvatar.removeAttribute('src'); }
+    setText(menuName, 'Guest');
+    setText(menuEmail, 'Not signed in');
+    if (logout) logout.hidden = true;
+    if (loginCta) loginCta.hidden = false;
+    if (menu) menu.hidden = true;
+  };
+
+  const showUser = user => {
+    const displayName = user?.displayName || user?.email?.split('@')[0] || 'Account';
+    button.href = '#';
+    setText(name, displayName);
+    setText(menuName, user?.displayName || 'My account');
+    setText(menuEmail, user?.email || '');
+    if (logout) logout.hidden = false;
+    if (loginCta) loginCta.hidden = true;
+    if (user?.photoURL) {
+      if (avatar) { avatar.src = user.photoURL; avatar.hidden = false; }
+      if (fallback) fallback.hidden = true;
+      if (menuAvatar) { menuAvatar.src = user.photoURL; menuAvatar.hidden = false; }
+    } else {
+      if (avatar) { avatar.hidden = true; avatar.removeAttribute('src'); }
+      if (fallback) fallback.hidden = false;
+      if (menuAvatar) { menuAvatar.hidden = true; menuAvatar.removeAttribute('src'); }
+    }
+  };
+
+  let currentUser = null;
+  const handleClick = async e => {
+    const target = e.target;
+    if (!target) return;
+
+    if (target.closest('#menuLogout')) {
+      e.preventDefault();
+      if (!firebase?.auth || typeof firebase.signOut !== 'function') return;
+      try {
+        await firebase.signOut(firebase.auth);
+      } catch (err) {
+        console.error('Sign out failed:', err);
+      } finally {
+        if (menu) menu.hidden = true;
+      }
+      return;
+    }
+
+    if (target.closest('#profileButton')) {
+      if (currentUser) {
+        e.preventDefault();
+        if (menu) menu.hidden = !menu.hidden;
+      }
+      return;
+    }
+
+    if (menu && !menu.hidden && profileArea && !target.closest('#profileArea')) {
+      menu.hidden = true;
+    }
+  };
+
+  document.addEventListener('click', handleClick);
+  let unsubscribe = null;
+
+  if (!firebase?.auth || typeof firebase.onAuthStateChanged !== 'function') {
+    showGuest();
+  } else {
+    try {
+      unsubscribe = firebase.onAuthStateChanged(firebase.auth, user => {
+        currentUser = user || null;
+        if (currentUser) showUser(currentUser);
+        else showGuest();
+      });
+    } catch (err) {
+      console.error('Auth state listener failed:', err);
+      showGuest();
+    }
+  }
+
+  setProfileUI._cleanup = () => {
+    document.removeEventListener('click', handleClick);
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
 window.MGHub={searchAnime,fetchJikan,animeCard,escapeHtml,initFirebase};
 window.MGHubReady=initFirebase().then(f=>{window.MGHubFirebase=f;setProfileUI(f);return f}).catch(e=>{console.error(e);setProfileUI(null);return null});
