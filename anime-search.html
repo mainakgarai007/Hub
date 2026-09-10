@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Anime Search — MG Master Hub</title><link rel="stylesheet" href="style.css"></head>
+<body><main class="app-shell"><section class="hero" style="min-height:auto;padding-bottom:30px"><div class="badge">🔎 ANIME SEARCH</div><h1>Find your<br><span>anime.</span></h1><p>Search the Jikan anime database and explore titles, scores, type and status.</p><form id="searchForm" class="search-box"><input id="query" required maxlength="80" placeholder="Search anime..." autocomplete="off"><button class="btn primary" type="submit">Search</button></form><div class="actions"><a class="btn secondary" href="anime.html">← Anime Hub</a></div></section><section class="modules"><div id="status"></div><div id="results" class="anime-grid"></div></section></main><script src="app.js"></script><script>
+const form=document.getElementById('searchForm'),query=document.getElementById('query'),results=document.getElementById('results'),status=document.getElementById('status');
+form.addEventListener('submit',async(e)=>{e.preventDefault();status.textContent='Searching…';results.innerHTML='';try{const data=await MGHub.searchAnime(query.value);status.textContent=data.length?`${data.length} results found`:'No anime found.';results.innerHTML=data.map(MGHub.animeCard).join('')}catch(err){status.textContent='Could not load anime right now. Please try again.';console.error(err)}});
+</script></body></html>
