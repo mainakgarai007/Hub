@@ -1,5 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Anime — MG Master Hub</title><link rel="stylesheet" href="style.css"></head>
-<body><main class="app-shell"><section class="hero" style="min-height:auto;padding-bottom:35px"><div class="badge">🎌 ANIME HUB</div><h1>Anime<br><span>center.</span></h1><p>Search anime, discover new releases and subscribe to the languages you want to follow.</p><div class="actions"><a class="btn primary" href="#search">🔎 Search Anime</a><a class="btn secondary" href="index.html">← Hub</a></div></section>
-<section class="modules" id="search"><h2>Anime features</h2><div class="grid"><div class="card"><span>🆕</span><strong>New Releases</strong><small>Upcoming episodes and release information</small></div><div class="card"><span>⏳</span><strong>Release Countdown</strong><small>Countdowns for tracked releases</small></div><div class="card"><span>🌐</span><strong>Language Releases</strong><small>Follow Hindi, English, Bengali and other available languages</small></div><div class="card"><span>🔔</span><strong>Subscribed Anime</strong><small>Your followed anime and notification settings</small></div><div class="card"><span>🔎</span><strong>Anime Search</strong><small>Search anime by title</small></div><div class="card"><span>🔥</span><strong>Trending</strong><small>Popular anime discovery</small></div></div></section></main></body></html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Anime — MG Master Hub</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="anime">
+  <header class="site-header app-shell">
+    <a class="brand" href="index.html">⚡ MG Master Hub</a>
+    <div class="profile-area" id="profileArea">
+      <a class="profile-btn" href="login.html" id="profileButton" aria-label="Open profile">
+        <span class="avatar-fallback" id="avatarFallback">👤</span>
+        <img id="profileAvatar" class="profile-avatar" alt="Profile photo" hidden>
+        <span class="profile-name" id="profileName">Login</span>
+      </a>
+      <div class="profile-menu" id="profileMenu" hidden>
+        <div class="profile-menu-user">
+          <img id="menuAvatar" class="menu-avatar" alt="Profile photo" hidden>
+          <div><strong id="menuName">Guest</strong><small id="menuEmail">Not signed in</small></div>
+        </div>
+        <a href="login.html">Account</a>
+        <button type="button" id="menuLogout" hidden>Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="hero" style="min-height:auto;padding-bottom:35px">
+      <div class="badge">🎌 ANIME HUB</div>
+      <h1>Anime<br><span>center.</span></h1>
+      <p>Search anime, discover new releases and manage the languages you want to follow.</p>
+      <div class="actions">
+        <a class="btn primary" href="anime-search.html">🔎 Search Anime</a>
+        <a class="btn secondary" href="index.html">← Hub</a>
+      </div>
+    </section>
+
+    <section class="modules">
+      <h2>Anime features</h2>
+      <div class="grid">
+        <a class="card" href="anime-search.html"><span>🆕</span><strong>New Releases</strong><small>Browse recently aired and upcoming anime</small></a>
+        <div class="card"><span>⏳</span><strong>Release Countdown</strong><small>Track upcoming releases and reminders</small></div>
+        <div class="card"><span>🌐</span><strong>Language Releases</strong><small>Follow Hindi, English, Bengali and other available languages</small></div>
+        <div class="card"><span>🔔</span><strong>Subscribed Anime</strong><small>Your followed anime and notification settings</small></div>
+        <a class="card" href="anime-search.html"><span>🔎</span><strong>Anime Search</strong><small>Search titles, genres and more</small></a>
+        <div class="card"><span>🔥</span><strong>Trending</strong><small>Discover popular anime</small></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
