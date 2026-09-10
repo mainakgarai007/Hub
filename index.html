@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MG Master Hub</title>
   <meta name="description" content="MG Master Hub — your personal entertainment, student and developer hub.">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body data-page="hub">
   <header class="site-header app-shell">
-    <a class="brand" href="index.html">⚡ MG Master Hub</a>
+    <a class="brand" href="index.html" aria-label="MG Master Hub home">⚡ MG Master Hub</a>
     <div class="profile-area" id="profileArea">
       <a class="profile-btn" href="login.html" id="profileButton" aria-label="Open profile">
         <span class="avatar-fallback" id="avatarFallback">👤</span>
@@ -19,7 +19,7 @@
       <div class="profile-menu" id="profileMenu" hidden>
         <div class="profile-menu-user">
           <img id="menuAvatar" class="menu-avatar" alt="Profile photo" hidden>
-          <div><strong id="menuName">Guest</strong><small id="menuEmail">Not signed in</small></div>
+          <div class="profile-menu-copy"><strong id="menuName">Guest</strong><small id="menuEmail">Not signed in</small></div>
         </div>
         <a href="login.html" id="menuAccount">Account</a>
         <button type="button" id="menuLogout" hidden>Log out</button>
@@ -51,6 +51,6 @@
     </section>
   </main>
 
-  <script type="module" src="app.js?v=3"></script>
+  <script type="module" src="app.js?v=6"></script>
 </body>
 </html>
