@@ -36,7 +36,7 @@ async function sendMessage(message){
   const {user}=await getAuth();
   if(!user)throw new Error('Please log in to use AI Helper.');
   const token=await user.getIdToken();
-  const response=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({message,history:history.slice(-8)})});
+  const response=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({message,history:history.slice(-9,-1)})});
   let data={};try{data=await response.json()}catch{}
   if(!response.ok)throw new Error(data.error||`AI request failed (${response.status})`);
   if(!data.reply)throw new Error('The AI returned an empty response.');
