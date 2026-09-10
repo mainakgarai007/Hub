@@ -1,118 +1,16 @@
 // MG Master Hub — shared app logic
 const API_BASE = 'https://api.jikan.moe/v4';
 const FIREBASE_VERSION = '12.18.0';
-
-async function searchAnime(query) {
-  const q = query.trim();
-  if (!q) return [];
-  const response = await fetch(`${API_BASE}/anime?q=${encodeURIComponent(q)}&limit=12`);
-  if (!response.ok) throw new Error(`Anime API error: ${response.status}`);
-  const json = await response.json();
-  return json.data || [];
-}
-
-function animeCard(anime) {
-  const image = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url || '';
-  const title = anime.title_english || anime.title || 'Unknown title';
-  const year = anime.year || '—';
-  const score = anime.score ?? '—';
-  return `<article class="anime-card">
-    <img src="${escapeHtml(image)}" alt="" loading="lazy">
-    <div><h3>${escapeHtml(title)}</h3><p>${year} · ⭐ ${score}</p><p>${escapeHtml(anime.type || 'Anime')} · ${escapeHtml(anime.status || 'Unknown')}</p></div>
-  </article>`;
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-}
-
-async function initFirebase() {
-  const config = window.firebaseConfig;
-  if (!config?.projectId) return null;
-  const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);
-  const authModule = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`);
-  const app = initializeApp(config);
-  const auth = authModule.getAuth(app);
-  return { ...authModule, app, auth };
-}
-
-function setProfileUI(firebase) {
-  const profileButton = document.getElementById('profileButton');
-  const profileAvatar = document.getElementById('profileAvatar');
-  const avatarFallback = document.getElementById('avatarFallback');
-  const profileName = document.getElementById('profileName');
-  const profileMenu = document.getElementById('profileMenu');
-  const menuAvatar = document.getElementById('menuAvatar');
-  const menuName = document.getElementById('menuName');
-  const menuEmail = document.getElementById('menuEmail');
-  const menuLogout = document.getElementById('menuLogout');
-  if (!profileButton) return;
-
-  const showGuest = () => {
-    profileButton.href = 'login.html';
-    profileName.textContent = 'Login';
-    avatarFallback.hidden = false;
-    profileAvatar.hidden = true;
-    menuName.textContent = 'Guest';
-    menuEmail.textContent = 'Not signed in';
-    menuAvatar.hidden = true;
-    menuLogout.hidden = true;
-  };
-
-  const showUser = (user) => {
-    profileButton.href = '#';
-    profileName.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'Account');
-    menuName.textContent = user.displayName || 'My account';
-    menuEmail.textContent = user.email || '';
-    menuLogout.hidden = false;
-    if (user.photoURL) {
-      profileAvatar.src = user.photoURL;
-      profileAvatar.hidden = false;
-      avatarFallback.hidden = true;
-      menuAvatar.src = user.photoURL;
-      menuAvatar.hidden = false;
-    } else {
-      profileAvatar.hidden = true;
-      avatarFallback.hidden = false;
-      menuAvatar.hidden = true;
-    }
-  };
-
-  profileButton.addEventListener('click', (event) => {
-    if (!firebase?.auth.currentUser) return;
-    event.preventDefault();
-    profileMenu.hidden = !profileMenu.hidden;
-  });
-
-  document.addEventListener('click', (event) => {
-    if (!profileMenu.hidden && !event.target.closest('#profileArea')) profileMenu.hidden = true;
-  });
-
-  menuLogout?.addEventListener('click', async () => {
-    await firebase.authModule.signOut(firebase.auth);
-    profileMenu.hidden = true;
-  });
-
-  if (!firebase) {
-    showGuest();
-    return;
-  }
-
-  firebase.authModule.onAuthStateChanged(firebase.auth, (user) => {
-    if (user) showUser(user);
-    else showGuest();
-  });
-}
-
-(async () => {
-  try {
-    const firebase = await initFirebase();
-    if (firebase) window.MGHubFirebase = firebase;
-    setProfileUI(firebase);
-  } catch (error) {
-    console.error('Firebase initialization failed:', error);
-    setProfileUI(null);
-  }
-})();
-
-window.MGHub = { searchAnime, animeCard, escapeHtml, initFirebase };
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyBF3jubXpba2G8CPszVN-Dip3-OWs_EUoE',
+  authDomain: 'hubs-b9c39.firebaseapp.com', projectId: 'hubs-b9c39',
+  storageBucket: 'hubs-b9c39.firebasestorage.app', messagingSenderId: '699995857695',
+  appId: '1:699995857695:web:240f8598fb4100d7cf462a'
+};
+async function requestJikan(path, attempt=0){try{const r=await fetch(`${API_BASE}${path}`,{headers:{Accept:'application/json'}});if((r.status===429||r.status>=500)&&attempt<2){await new Promise(x=>setTimeout(x,1200*(attempt+1)));return requestJikan(path,attempt+1)}if(!r.ok)throw new Error(`Jikan HTTP ${r.status}`);const j=await r.json();return Array.isArray(j.data)?j.data:[]}catch(e){if(attempt<2&&e instanceof TypeError){await new Promise(x=>setTimeout(x,1000));return requestJikan(path,attempt+1)}throw e}}
+const searchAnime=q=>requestJikan(`/anime?q=${encodeURIComponent(String(q||'').trim())}&limit=12&sfw=true`); const fetchJikan=requestJikan;
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function animeCard(a,extra=''){const image=a.images?.jpg?.large_image_url||a.images?.jpg?.image_url||'';const title=a.title_english||a.title||'Unknown title';const year=a.year||a.aired?.from?.slice(0,4)||'—';return `<article class="anime-card"><img src="${escapeHtml(image)}" alt="" loading="lazy"><div class="anime-card-copy"><h3>${escapeHtml(title)}</h3><p>${year} · ⭐ ${a.score??'—'}</p><p>${escapeHtml(a.type||'Anime')} · ${escapeHtml(a.status||'Unknown')}</p>${extra}</div></article>`}
+let firebasePromise;async function initFirebase(){if(firebasePromise)return firebasePromise;firebasePromise=(async()=>{const{initializeApp}=await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app.js`);const authModule=await import(`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth.js`);const app=initializeApp(FIREBASE_CONFIG);return{...authModule,app,auth:authModule.getAuth(app)}})();return firebasePromise}
+function setProfileUI(firebase){const button=document.getElementById('profileButton'),avatar=document.getElementById('profileAvatar'),fallback=document.getElementById('avatarFallback'),name=document.getElementById('profileName'),menu=document.getElementById('profileMenu'),menuAvatar=document.getElementById('menuAvatar'),menuName=document.getElementById('menuName'),menuEmail=document.getElementById('menuEmail'),logout=document.getElementById('menuLogout'),loginCta=document.getElementById('loginCta');if(!button)return;const guest=()=>{button.href='login.html';name.textContent='Login';fallback.hidden=false;avatar.hidden=true;menuName.textContent='Guest';menuEmail.textContent='Not signed in';menuAvatar.hidden=true;logout.hidden=true;if(loginCta)loginCta.hidden=false};const userUI=u=>{button.href='#';name.textContent=u.displayName||u.email?.split('@')[0]||'Account';menuName.textContent=u.displayName||'My account';menuEmail.textContent=u.email||'';logout.hidden=false;if(u.photoURL){avatar.src=u.photoURL;avatar.hidden=false;fallback.hidden=true;menuAvatar.src=u.photoURL;menuAvatar.hidden=false}else{avatar.hidden=true;fallback.hidden=false;menuAvatar.hidden=true}if(loginCta)loginCta.hidden=true};button.addEventListener('click',e=>{if(firebase?.auth.currentUser){e.preventDefault();menu.hidden=!menu.hidden}});document.addEventListener('click',e=>{if(menu&&!menu.hidden&&!e.target.closest('#profileArea'))menu.hidden=true});logout?.addEventListener('click',async()=>{await firebase.signOut(firebase.auth);menu.hidden=true});if(!firebase)return guest();firebase.onAuthStateChanged(firebase.auth,u=>u?userUI(u):guest())}
+window.MGHub={searchAnime,fetchJikan,animeCard,escapeHtml,initFirebase};window.MGHubReady=initFirebase().then(f=>{window.MGHubFirebase=f;setProfileUI(f);return f}).catch(e=>{console.error(e);setProfileUI(null);return null});
