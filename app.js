@@ -2,7 +2,7 @@
 const API_BASE = 'https://api.jikan.moe/v4';
 const FIREBASE_VERSION = '12.18.0';
 const FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyBF3jubXpba2GCPszVN-Dip3-OWs_EUoE',
+  apiKey: 'AIzaSyBF3jubXpba2G8CPszVN-Dip3-OWs_EUoE',
   authDomain: 'hubs-b9c39.firebaseapp.com',
   projectId: 'hubs-b9c39',
   storageBucket: 'hubs-b9c39.firebasestorage.app',
@@ -130,5 +130,4 @@ window.MGHubReady = initFirebase().then(f => {
   return null;
 });
 
-// These exports are required by login.html, anime-search.html and anime-feature.html.
 export { searchAnime, fetchJikan, animeCard, escapeHtml, initFirebase };
