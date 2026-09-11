@@ -1,7 +1,10 @@
 importScripts('https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js','https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging-compat.js');
 
+// Keep this Firebase client config identical to the shared frontend config.
+// This is public web configuration; private Firebase Admin credentials must
+// never be placed in this service worker.
 firebase.initializeApp({
-  apiKey:'AIzaSyBF3jubXpba2G8CPszVN-Dip-3OWs_EUoE',
+  apiKey:'AIzaSyBF3jubXpba2GCPszVN-Dip-3OWs_EUoE',
   authDomain:'hubs-b9c39.firebaseapp.com',
   projectId:'hubs-b9c39',
   storageBucket:'hubs-b9c39.firebasestorage.app',
