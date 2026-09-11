@@ -5,6 +5,7 @@ const { getMessaging } = require('firebase-admin/messaging');
 const JIKAN = 'https://api.jikan.moe/v4';
 const DELAY_MS = 700;
 const MAX_TOKENS = 50;
+const OWNER = 'mainakgarai007';
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -68,18 +69,57 @@ function getCredentials() {
   return credentials;
 }
 
-async function main() {
-  const credentials = getCredentials();
+async function getUserTokens(db, userDoc) {
+  const userId = userDoc.id;
+  const prefSnap = await db.doc(`users/${userId}/profile/notificationPreferences`).get();
+  const prefs = prefsOf(prefSnap.data());
+  if (!prefs.enabled) return { userId, prefs, tokens: [] };
 
-  if (!getApps().length) {
-    initializeApp({ credential: cert(credentials) });
+  const tokenSnap = await db.collection(`users/${userId}/notificationTokens`).get();
+  const tokens = tokenSnap.docs
+    .map(doc => doc.data()?.token)
+    .filter(Boolean)
+    .slice(0, MAX_TOKENS);
+  return { userId, prefs, tokens };
+}
+
+async function broadcast(db, users, title, body) {
+  let sent = 0;
+  let removed = 0;
+
+  for (const userDoc of users.docs) {
+    const { userId, tokens } = await getUserTokens(db, userDoc);
+    if (!tokens.length) continue;
+
+    const staleTokens = await sendToTokens(
+      tokens,
+      title,
+      body,
+      '/Hub/notifications.html',
+      `owner-${Date.now()}`,
+    );
+    sent += 1;
+    removed += staleTokens.length;
+
+    for (const stale of staleTokens) {
+      await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
+    }
   }
 
-  const db = getFirestore();
-  const messaging = getMessaging();
-  void messaging;
+  console.log(`Broadcast complete. Sent to ${sent} user(s), removed ${removed} stale token(s).`);
+}
 
-  const users = await db.collection('users').get();
+async function testNotification(db, users) {
+  // Test only goes to enabled devices, never to users who disabled push.
+  await broadcast(
+    db,
+    users,
+    '🔔 MG Master Hub',
+    'Notification test successful! Your push notifications are working.',
+  );
+}
+
+async function checkAnime(db, users) {
   console.log(`Checking ${users.size} user(s).`);
 
   let checked = 0;
@@ -88,15 +128,7 @@ async function main() {
 
   for (const userDoc of users.docs) {
     const userId = userDoc.id;
-    const prefSnap = await db.doc(`users/${userId}/profile/notificationPreferences`).get();
-    const prefs = prefsOf(prefSnap.data());
-    if (!prefs.enabled) continue;
-
-    const tokenSnap = await db.collection(`users/${userId}/notificationTokens`).get();
-    const tokens = tokenSnap.docs
-      .map(doc => doc.data()?.token)
-      .filter(Boolean)
-      .slice(0, MAX_TOKENS);
+    const { prefs, tokens } = await getUserTokens(db, userDoc);
     if (!tokens.length) continue;
 
     const subsSnap = await db.collection(`users/${userId}/subscriptions`).get();
@@ -122,7 +154,6 @@ async function main() {
           },
         };
 
-        // First check establishes a baseline and never sends an old-episode alert.
         if (state.baselined !== true) {
           update.notificationState = {
             ...update.notificationState,
@@ -151,8 +182,7 @@ async function main() {
             sent += 1;
             removedTokens += staleTokens.length;
             for (const stale of staleTokens) {
-              const docId = tokenId(stale);
-              await db.doc(`users/${userId}/notificationTokens/${docId}`).delete().catch(() => {});
+              await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
             }
           }
 
@@ -166,6 +196,9 @@ async function main() {
             );
             sent += 1;
             removedTokens += staleTokens.length;
+            for (const stale of staleTokens) {
+              await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
+            }
           }
 
           update.notificationState = {
@@ -190,6 +223,9 @@ async function main() {
             );
             sent += 1;
             removedTokens += staleTokens.length;
+            for (const stale of staleTokens) {
+              await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
+            }
           }
           if (key) {
             update.notificationState = {
@@ -207,6 +243,35 @@ async function main() {
   }
 
   console.log(`Done. Checked ${checked} subscription(s), sent ${sent} notification batch(es), removed ${removedTokens} stale token(s).`);
+}
+
+async function main() {
+  const credentials = getCredentials();
+  if (!getApps().length) initializeApp({ credential: cert(credentials) });
+
+  const db = getFirestore();
+  const users = await db.collection('users').get();
+  const mode = process.env.NOTIFICATION_MODE || 'check';
+
+  if (mode === 'owner-message') {
+    const actor = String(process.env.GITHUB_ACTOR || '');
+    if (actor !== OWNER) {
+      throw new Error('Owner message is restricted to the repository owner.');
+    }
+
+    const title = String(process.env.OWNER_MESSAGE_TITLE || '').trim().slice(0, 120) || 'MG Master Hub';
+    const body = String(process.env.OWNER_MESSAGE_BODY || '').trim().slice(0, 1000);
+    if (!body) throw new Error('Owner message body is required.');
+    await broadcast(db, users, `📢 ${title}`, body);
+    return;
+  }
+
+  if (mode === 'test') {
+    await testNotification(db, users);
+    return;
+  }
+
+  await checkAnime(db, users);
 }
 
 main().catch(error => {
