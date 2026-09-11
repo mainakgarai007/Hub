@@ -69,30 +69,50 @@ function getCredentials() {
   return credentials;
 }
 
-async function getUserTokens(db, userDoc) {
-  const userId = userDoc.id;
-  const prefSnap = await db.doc(`users/${userId}/profile/notificationPreferences`).get();
-  const prefs = prefsOf(prefSnap.data());
-  if (!prefs.enabled) return { userId, prefs, tokens: [] };
+// Discover users from notification token documents instead of users/{uid} root
+// documents. Firestore allows subcollections to exist even when the parent
+// document does not, which is how the web app currently stores tokens.
+async function getNotificationUsers(db) {
+  const tokenSnap = await db.collectionGroup('notificationTokens').get();
+  const grouped = new Map();
 
-  const tokenSnap = await db.collection(`users/${userId}/notificationTokens`).get();
-  const tokens = tokenSnap.docs
-    .map(doc => doc.data()?.token)
-    .filter(Boolean)
-    .slice(0, MAX_TOKENS);
-  return { userId, prefs, tokens };
+  for (const doc of tokenSnap.docs) {
+    const userRef = doc.ref.parent.parent;
+    if (!userRef) continue;
+
+    const userId = userRef.id;
+    const token = doc.data()?.token;
+    if (!token) continue;
+
+    if (!grouped.has(userId)) grouped.set(userId, []);
+    const tokens = grouped.get(userId);
+    if (tokens.length < MAX_TOKENS) tokens.push(token);
+  }
+
+  const users = [];
+  for (const [userId, tokens] of grouped.entries()) {
+    const prefSnap = await db.doc(`users/${userId}/profile/notificationPreferences`).get();
+    const prefs = prefsOf(prefSnap.data());
+    if (prefs.enabled && tokens.length) users.push({ userId, prefs, tokens });
+  }
+
+  console.log(`Discovered ${users.length} enabled user(s) from ${tokenSnap.size} notification token document(s).`);
+  return users;
+}
+
+async function removeStaleTokens(db, userId, staleTokens) {
+  for (const stale of staleTokens) {
+    await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
+  }
 }
 
 async function broadcast(db, users, title, body) {
   let sent = 0;
   let removed = 0;
 
-  for (const userDoc of users.docs) {
-    const { userId, tokens } = await getUserTokens(db, userDoc);
-    if (!tokens.length) continue;
-
+  for (const user of users) {
     const staleTokens = await sendToTokens(
-      tokens,
+      user.tokens,
       title,
       body,
       '/Hub/notifications.html',
@@ -100,10 +120,7 @@ async function broadcast(db, users, title, body) {
     );
     sent += 1;
     removed += staleTokens.length;
-
-    for (const stale of staleTokens) {
-      await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
-    }
+    await removeStaleTokens(db, user.userId, staleTokens);
   }
 
   console.log(`Broadcast complete. Sent to ${sent} user(s), removed ${removed} stale token(s).`);
@@ -120,17 +137,14 @@ async function testNotification(db, users) {
 }
 
 async function checkAnime(db, users) {
-  console.log(`Checking ${users.size} user(s).`);
+  console.log(`Checking ${users.length} enabled user(s).`);
 
   let checked = 0;
   let sent = 0;
   let removedTokens = 0;
 
-  for (const userDoc of users.docs) {
-    const userId = userDoc.id;
-    const { prefs, tokens } = await getUserTokens(db, userDoc);
-    if (!tokens.length) continue;
-
+  for (const user of users) {
+    const { userId, prefs, tokens } = user;
     const subsSnap = await db.collection(`users/${userId}/subscriptions`).get();
     if (subsSnap.empty) continue;
 
@@ -181,9 +195,7 @@ async function checkAnime(db, users) {
             );
             sent += 1;
             removedTokens += staleTokens.length;
-            for (const stale of staleTokens) {
-              await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
-            }
+            await removeStaleTokens(db, userId, staleTokens);
           }
 
           if (prefs.status && currentStatus !== String(state.lastStatus || '')) {
@@ -196,9 +208,7 @@ async function checkAnime(db, users) {
             );
             sent += 1;
             removedTokens += staleTokens.length;
-            for (const stale of staleTokens) {
-              await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
-            }
+            await removeStaleTokens(db, userId, staleTokens);
           }
 
           update.notificationState = {
@@ -223,9 +233,7 @@ async function checkAnime(db, users) {
             );
             sent += 1;
             removedTokens += staleTokens.length;
-            for (const stale of staleTokens) {
-              await db.doc(`users/${userId}/notificationTokens/${tokenId(stale)}`).delete().catch(() => {});
-            }
+            await removeStaleTokens(db, userId, staleTokens);
           }
           if (key) {
             update.notificationState = {
@@ -250,7 +258,7 @@ async function main() {
   if (!getApps().length) initializeApp({ credential: cert(credentials) });
 
   const db = getFirestore();
-  const users = await db.collection('users').get();
+  const users = await getNotificationUsers(db);
   const mode = process.env.NOTIFICATION_MODE || 'check';
 
   if (mode === 'owner-message') {
