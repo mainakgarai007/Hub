@@ -89,7 +89,7 @@ exports.checkAnimeNotifications=onSchedule({schedule:'every 30 minutes',timeZone
         }
         if(prefs.news){
           await sleep(800);const news=(await jikan(`/anime/${malId}/news?limit=3`)).data||[];const latest=news[0];const key=latest?.url||latest?.mal_id||null;
-          if(key&&state.lastNewsKey&&key!==state.lastNewsKey)await sendToTokens(tokens,`📰 ${name}`,latest.title||'New anime news is available.`,`/Hub/anime-pulse.html`,`news-${malId}-${tokenId(key)}`);
+          if(key&&state.lastNewsKey&&key!==state.lastNewsKey)await sendToTokens(tokens,`📰 ${name}`,latest.title||'New anime news is available.',`/Hub/anime-pulse.html`,`news-${malId}-${tokenId(key)}`);
           if(key)update.notificationState={...update.notificationState,lastNewsKey:key};
         }
         await subDoc.ref.set(update,{merge:true});
