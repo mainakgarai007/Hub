@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="MG Master Hub Entertainment — movies, music, photography and real-world news.">
+  <meta name="theme-color" content="#070a12">
+  <title>Entertainment • MG Master Hub</title>
+  <link rel="stylesheet" href="style.css?v=27">
+</head>
+<body>
+  <header class="site-header app-shell">
+    <a class="brand" href="index.html" aria-label="MG Master Hub home">⚡ MG Master Hub</a>
+    <div class="profile-area" id="profileArea">
+      <a class="profile-btn" href="login.html" id="profileButton" aria-label="Account">
+        <span class="avatar-fallback" id="avatarFallback">👤</span>
+        <img id="profileAvatar" class="profile-avatar" alt="Profile photo" hidden>
+        <span class="profile-name" id="profileName">Account</span>
+      </a>
+      <div class="profile-menu" id="profileMenu" hidden>
+        <div class="profile-menu-user">
+          <img id="menuAvatar" class="menu-avatar" alt="Profile photo" hidden>
+          <div><strong id="menuName">Guest</strong><small id="menuEmail">Not signed in</small></div>
+        </div>
+        <a href="login.html">Account</a>
+        <button id="menuLogout" type="button" hidden>Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="hero hero-home">
+      <div class="badge">🎬 ENTERTAINMENT</div>
+      <h1>Relax.<br><span>Discover more.</span></h1>
+      <p>Movies, music, photography and real-world news — all in one entertainment space.</p>
+    </section>
+
+    <section class="modules" aria-labelledby="entertainment-title">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">ENTERTAINMENT</div>
+          <h2 id="entertainment-title">Choose your space</h2>
+          <p class="section-subtitle">Pick a category and explore when it is ready.</p>
+        </div>
+      </div>
+
+      <div class="grid module-grid">
+        <a class="card card-featured" href="anime.html">
+          <span class="card-icon">🎌</span>
+          <div><strong>Anime</strong><small>Releases, search, tracking & notifications</small></div>
+          <span class="card-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <div class="card card-coming" aria-disabled="true">
+          <span class="card-icon">🎬</span>
+          <div><strong>Movies</strong><small>Movie discovery, details, ratings & watchlists</small></div>
+          <span class="status-pill">Coming soon</span>
+        </div>
+
+        <div class="card card-coming" aria-disabled="true">
+          <span class="card-icon">🎵</span>
+          <div><strong>Music</strong><small>Artists, albums, playlists & music discovery</small></div>
+          <span class="status-pill">Coming soon</span>
+        </div>
+
+        <div class="card card-coming" aria-disabled="true">
+          <span class="card-icon">📸</span>
+          <div><strong>Photography</strong><small>Photo inspiration, tips, creators & collections</small></div>
+          <span class="status-pill">Coming soon</span>
+        </div>
+
+        <div class="card card-coming" aria-disabled="true">
+          <span class="card-icon">📰</span>
+          <div><strong>News & Tech</strong><small>AI, computers, science and important real-world updates</small></div>
+          <span class="status-pill">Coming soon</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="actions" style="margin-top:24px">
+      <a class="btn secondary" href="index.html">← Back to Hub</a>
+    </div>
+
+    <section class="footer-note" aria-label="Project status">
+      <span>MG Master Hub</span><span>Entertainment is growing.</span>
+    </section>
+  </main>
+
+  <script type="module" src="app.js?v=27"></script>
+  <script type="module" src="auth-ui.js?v=11"></script>
+</body>
+</html>
