@@ -2,6 +2,26 @@ name: Anime Notifications
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Run mode'
+        required: true
+        type: choice
+        options:
+          - check
+          - test
+          - owner-message
+        default: check
+      title:
+        description: 'Owner message title (only for owner-message)'
+        required: false
+        type: string
+        default: 'MG Master Hub'
+      message:
+        description: 'Owner message body (only for owner-message)'
+        required: false
+        type: string
+        default: ''
   schedule:
     - cron: '*/30 * * * *'
 
@@ -28,7 +48,11 @@ jobs:
       - name: Install Firebase Admin SDK
         run: npm install --no-save --no-package-lock firebase-admin@14.3.0
 
-      - name: Check anime and send notifications
+      - name: Run notification service
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          NOTIFICATION_MODE: ${{ github.event.inputs.mode || 'check' }}
+          OWNER_MESSAGE_TITLE: ${{ github.event.inputs.title || '' }}
+          OWNER_MESSAGE_BODY: ${{ github.event.inputs.message || '' }}
+          GITHUB_ACTOR: ${{ github.actor }}
         run: node scripts/anime-notifications.js
